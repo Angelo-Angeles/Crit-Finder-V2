@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { Plus, Search, Filter, Users, User, MapPin, MessageCircle, Scroll } from "lucide-react";
 import { db, auth } from "../firebase";
 import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
+import { useNavigate } from "react-router-dom";
 
 export function QuestBoardPage() {
+  const navigate = useNavigate();
   const [quests, setQuests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -53,6 +55,8 @@ export function QuestBoardPage() {
       type: newQuestType,
       title: newQuestTitle,
       author: authorName,
+      authorId: currentGuildUser ? currentGuildUser.uid : null, // NEW
+      authorPhoto: currentGuildUser ? currentGuildUser.photoURL : null, // NEW
       location: "Online", 
       createdAt: Date.now(),
       description: newQuestDescription,
@@ -183,11 +187,22 @@ export function QuestBoardPage() {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-6 text-sm text-amber-300/70">
+                  <div className="flex items-center gap-6 text-sm text-amber-300/70 mb-4">
                     <div className="flex items-center gap-2"><User className="w-4 h-4" /><span>{quest.author}</span></div>
                     <div className="flex items-center gap-2"><MapPin className="w-4 h-4" /><span>{quest.location}</span></div>
-                    <div className="flex items-center gap-2"><MessageCircle className="w-4 h-4" /><span>{quest.replies || 0} replies</span></div>
                   </div>
+
+                  {/* NEW MESSAGE BUTTON */}
+                  {auth.currentUser && auth.currentUser.uid !== quest.authorId && quest.authorId && (
+                    <button 
+                      onClick={() => navigate('/messages', { 
+                        state: { targetUser: { uid: quest.authorId, name: quest.author, photoURL: quest.authorPhoto } } 
+                      })}
+                      className="mt-2 px-4 py-2 bg-stone-700/50 hover:bg-stone-700 border border-amber-800/50 hover:border-amber-600 text-amber-200 text-sm rounded transition-colors flex items-center gap-2 cursor-pointer w-fit"
+                    >
+                      <MessageCircle className="w-4 h-4" /> Message {quest.author}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
