@@ -1,20 +1,40 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sword, Mail, Lock, User } from "lucide-react";
-import { loginWithGoogle } from "../firebase";
+import { Sword, Mail, Lock, User, AlertCircle } from "lucide-react";
+import { loginWithGoogle, loginWithEmail, registerWithEmail } from "../firebase";
 
 export function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
 
-  // Form handling for Email/Password fallback
-  const handleSubmit = (e) => {
+  // Form States
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Live Firebase Form Submission
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Redirect to the quest board for now
-    navigate("/quest-board");
+    setError("");
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        await loginWithEmail(email, password);
+      } else {
+        await registerWithEmail(email, password);
+      }
+      navigate("/quest-board");
+    } catch (err) {
+      console.error(err);
+      setError("Invalid credentials. Please try again or check your password length.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Google Sign-In using your secure Firebase handler
   const handleGoogleLogin = async () => {
     try {
       const user = await loginWithGoogle();
@@ -22,7 +42,8 @@ export function LoginPage() {
         navigate("/quest-board");
       }
     } catch (error) {
-      console.error("Google authentication failed:", error);
+      console.error("Google auth failed:", error);
+      setError("Failed to sign in with Google.");
     }
   };
 
@@ -31,7 +52,6 @@ export function LoginPage() {
       <div className="w-full max-w-md">
         <div className="bg-stone-800/80 backdrop-blur-sm border-2 border-amber-700 rounded-lg shadow-2xl p-8">
           
-          {/* Header */}
           <div className="flex flex-col items-center justify-center gap-3 mb-8">
             <Sword className="w-10 h-10 text-amber-500" />
             <h2 className="text-3xl font-bold text-amber-100">
@@ -39,7 +59,13 @@ export function LoginPage() {
             </h2>
           </div>
 
-          {/* Core Form */}
+          {error && (
+            <div className="mb-6 p-3 bg-red-900/50 border border-red-700 rounded-md flex items-center gap-2 text-red-200 text-sm">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <p>{error}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {!isLogin && (
               <div>
@@ -48,7 +74,9 @@ export function LoginPage() {
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-amber-600" />
                   <input 
                     type="text" 
-                    className="w-full pl-10 pr-4 py-3 bg-stone-900 border border-amber-800 rounded-md text-amber-100 placeholder-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-600" 
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-stone-900 border border-amber-800 rounded-md text-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-600" 
                     placeholder="Enter your username" 
                     required={!isLogin} 
                   />
@@ -62,7 +90,9 @@ export function LoginPage() {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-amber-600" />
                 <input 
                   type="email" 
-                  className="w-full pl-10 pr-4 py-3 bg-stone-900 border border-amber-800 rounded-md text-amber-100 placeholder-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-600" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-stone-900 border border-amber-800 rounded-md text-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-600" 
                   placeholder="Enter your email" 
                   required 
                 />
@@ -75,19 +105,25 @@ export function LoginPage() {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-amber-600" />
                 <input 
                   type="password" 
-                  className="w-full pl-10 pr-4 py-3 bg-stone-900 border border-amber-800 rounded-md text-amber-100 placeholder-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-600" 
-                  placeholder="Enter your password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-stone-900 border border-amber-800 rounded-md text-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-600" 
+                  placeholder="Enter your password (min 6 characters)" 
                   required 
+                  minLength={6}
                 />
               </div>
             </div>
 
-            <button type="submit" className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-md transition-colors cursor-pointer">
-              {isLogin ? "Login with Email" : "Create Account"}
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full py-3 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-semibold rounded-md transition-colors cursor-pointer"
+            >
+              {loading ? "Consulting the Archives..." : (isLogin ? "Login with Email" : "Create Account")}
             </button>
           </form>
 
-          {/* Social Provider Splitter */}
           <div className="mt-4">
             <div className="relative mb-4">
               <div className="absolute inset-0 flex items-center">
@@ -100,9 +136,10 @@ export function LoginPage() {
 
             <button 
               onClick={handleGoogleLogin} 
+              type="button"
               className="w-full py-3 bg-stone-900 hover:bg-stone-800 border border-amber-700 text-amber-100 font-semibold rounded-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
+               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                 <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
                 <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
@@ -112,9 +149,8 @@ export function LoginPage() {
             </button>
           </div>
 
-          {/* Toggle Link */}
           <div className="mt-6 text-center">
-            <button onClick={() => setIsLogin(!isLogin)} className="text-amber-300 hover:text-amber-200 transition-colors cursor-pointer text-sm">
+            <button onClick={() => setIsLogin(!isLogin)} type="button" className="text-amber-300 hover:text-amber-200 transition-colors cursor-pointer text-sm">
               {isLogin ? "Don't have an account? Sign up" : "Already have an account? Login"}
             </button>
           </div>

@@ -48,7 +48,7 @@ export function Layout() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-900 via-stone-800 to-stone-900">
+    <div className="min-h-screen bg-linear-to-b from-amber-900 via-stone-800 to-stone-900">
       <nav className="bg-stone-950/80 backdrop-blur-sm border-b-4 border-amber-700 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">

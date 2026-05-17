@@ -1,6 +1,13 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signOut,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword 
+} from "firebase/auth";
 
 // Your exact Firebase configuration
 const firebaseConfig = {
@@ -42,4 +49,16 @@ export const logoutUser = async () => {
     console.error("Error signing out:", error);
     throw error;
   }
+};
+
+// Register a new user with Email/Password
+export const registerWithEmail = async (email, password) => {
+  const result = await createUserWithEmailAndPassword(auth, email, password);
+  return result.user;
+};
+
+// Login an existing user with Email/Password
+export const loginWithEmail = async (email, password) => {
+  const result = await signInWithEmailAndPassword(auth, email, password);
+  return result.user;
 };
